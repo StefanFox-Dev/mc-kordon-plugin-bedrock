@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  VPN, proxy and bot protection for Minecraft proxies.<br>
+  VPN, proxy and bot protection for Minecraft Bedrock proxies.<br>
   <a href="https://kordonlabs.com">Website</a> ·
   <a href="https://panel.kordonlabs.com/register">Get started for free</a> ·
   <a href="https://t.me/kordonlabs">News</a>
