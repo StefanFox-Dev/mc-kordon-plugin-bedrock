@@ -3,7 +3,6 @@ package com.kordonlabs.plugin.nukkit.listener;
 import cn.nukkit.Player;
 import cn.nukkit.event.EventHandler;
 import cn.nukkit.event.EventPriority;
-import cn.nukkit.event.Listener;
 import cn.nukkit.event.player.PlayerJoinEvent;
 import cn.nukkit.event.player.PlayerQuitEvent;
 import com.kordonlabs.plugin.common.KordonCore;
@@ -15,8 +14,9 @@ import com.kordonlabs.plugin.nukkit.NukkitPlatform;
 
 /**
  * Tracks Nukkit / Lumi sessions: join and quit.
+ * Handled via Lumi EventBus without deprecated Listener interface.
  */
-public final class NukkitPlayerListener implements Listener {
+public final class NukkitPlayerListener {
 
     private final KordonCore core;
     private final NukkitPlatform platform;

@@ -2,7 +2,6 @@ package com.kordonlabs.plugin.nukkit.listener;
 
 import cn.nukkit.event.EventHandler;
 import cn.nukkit.event.EventPriority;
-import cn.nukkit.event.Listener;
 import cn.nukkit.event.player.PlayerAsyncPreLoginEvent;
 import cn.nukkit.network.protocol.ProtocolInfo;
 import cn.nukkit.utils.LoginChainData;
@@ -24,9 +23,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Checks logins during {@link PlayerAsyncPreLoginEvent}.
- * In Nukkit, this event runs on an asynchronous worker pool.
+ * Handled via Lumi EventBus without deprecated Listener interface.
  */
-public final class NukkitLoginListener implements Listener {
+public final class NukkitLoginListener {
 
     private final KordonNukkitPlugin plugin;
     private final HeldLogin.Core core;

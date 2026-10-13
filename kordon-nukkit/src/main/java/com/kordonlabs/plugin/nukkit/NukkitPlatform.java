@@ -192,7 +192,7 @@ public final class NukkitPlatform implements Platform {
         if (target == null) return legacySection;
         KordonRemoteKickEvent event = new KordonRemoteKickEvent(target, cause.name(), legacySection);
         try {
-            server.getPluginManager().callEvent(event);
+            server.getEventBus().call(event);
         } catch (Throwable t) {
             return legacySection;
         }
@@ -206,7 +206,7 @@ public final class NukkitPlatform implements Platform {
         if (verdict == null) return verdict;
         KordonLoginCheckedEvent event = new KordonLoginCheckedEvent(connectionKey, verdict);
         try {
-            server.getPluginManager().callEvent(event);
+            server.getEventBus().call(event);
         } catch (Throwable t) {
             return verdict;
         }

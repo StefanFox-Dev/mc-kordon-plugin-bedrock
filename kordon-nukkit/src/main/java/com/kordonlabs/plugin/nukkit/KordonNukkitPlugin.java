@@ -1,6 +1,5 @@
 package com.kordonlabs.plugin.nukkit;
 
-import cn.nukkit.event.HandlerList;
 import cn.nukkit.plugin.PluginBase;
 import com.kordonlabs.plugin.common.KordonCore;
 import com.kordonlabs.plugin.common.install.DuplicateJarCheck;
@@ -20,6 +19,8 @@ public final class KordonNukkitPlugin extends PluginBase {
 
     private volatile KordonCore core;
     private volatile NukkitKordonCommand command;
+    private volatile NukkitLoginListener loginListener;
+    private volatile NukkitPlayerListener playerListener;
 
     @Override
     public void onEnable() {
@@ -60,14 +61,25 @@ public final class KordonNukkitPlugin extends PluginBase {
     }
 
     private void register(KordonCore c, NukkitPlatform platform) {
-        getServer().getPluginManager().registerEvents(new NukkitLoginListener(this, c, platform), this);
-        getServer().getPluginManager().registerEvents(new NukkitPlayerListener(c, platform, c.log()), this);
+        this.loginListener = new NukkitLoginListener(this, c, platform);
+        this.playerListener = new NukkitPlayerListener(c, platform, c.log());
+        getServer().getEventBus().subscribe(this.loginListener);
+        getServer().getEventBus().subscribe(this.playerListener);
+
         this.command = new NukkitKordonCommand(this, c::commands, c.messages(), c.log());
         getServer().getCommandMap().register("kordon", this.command);
     }
 
     private void unregisterAll() {
         try {
+            if (this.loginListener != null) {
+                getServer().getEventBus().unsubscribe(this.loginListener);
+                this.loginListener = null;
+            }
+            if (this.playerListener != null) {
+                getServer().getEventBus().unsubscribe(this.playerListener);
+                this.playerListener = null;
+            }
             if (this.command != null) {
                 this.command.unregister(getServer().getCommandMap());
                 this.command = null;
