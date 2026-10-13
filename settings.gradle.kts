@@ -11,4 +11,4 @@ dependencyResolutionManagement {
     }
 }
 rootProject.name = "kordon-plugin"
-include("kordon-common", "kordon-bungee", "kordon-velocity", "kordon-universal")
+include("kordon-common", "kordon-bungee", "kordon-velocity", "kordon-nukkit", "kordon-universal")

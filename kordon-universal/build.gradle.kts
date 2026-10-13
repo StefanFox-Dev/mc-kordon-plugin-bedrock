@@ -9,6 +9,7 @@ dependencies {
     // platform modules and never reach this runtime classpath.
     implementation(project(":kordon-bungee"))
     implementation(project(":kordon-velocity"))
+    implementation(project(":kordon-nukkit"))
 }
 
 // Only the shaded jar is published.
