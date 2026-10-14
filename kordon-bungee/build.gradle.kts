@@ -1,6 +1,6 @@
-// BungeeCord / Waterfall module.
 plugins {
     `java-library`
+    alias(libs.plugins.shadow)
 }
 
 // Non-transitive on purpose: bungeecord-protocol depends on com.mojang:brigadier, which is not on Maven Central.
@@ -27,3 +27,23 @@ tasks.processResources {
     filteringCharset = "UTF-8"
     filesMatching(listOf("bungee.yml", "kordon/version.properties")) { expand(props) }
 }
+
+tasks.shadowJar {
+    archiveFileName.set("Kordon-Bungee.jar")
+    relocate("com.google.gson", "com.kordonlabs.plugin.lib.gson")
+    dependencies { exclude(dependency("com.google.errorprone:.*")) }
+    mergeServiceFiles()
+    exclude(
+        "module-info.class", "META-INF/versions/*/module-info.class", "META-INF/maven/**",
+        "META-INF/proguard/**", "META-INF/INDEX.LIST", "META-INF/*.SF", "META-INF/*.DSA", "META-INF/*.RSA"
+    )
+    manifest {
+        attributes(
+            "Implementation-Title" to "Kordon-Bungee",
+            "Implementation-Version" to project.version
+        )
+    }
+    addMultiReleaseAttribute = false
+}
+
+tasks.assemble { dependsOn(tasks.shadowJar) }
