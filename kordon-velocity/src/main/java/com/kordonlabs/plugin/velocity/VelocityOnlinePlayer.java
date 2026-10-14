@@ -87,7 +87,14 @@ public final class VelocityOnlinePlayer implements OnlinePlayer {
 
     @Override
     public ClientSettings clientSettings() {
-        if (!player.hasSentPlayerSettings()) return null;
+        if (!player.hasSentPlayerSettings()) {
+            if (bedrock()) {
+                return new ClientSettings(12, "shown", Boolean.TRUE, "right",
+                        ClientSettings.skinMask(true, true, true, true, true, true, true),
+                        Boolean.TRUE, Boolean.FALSE, "all");
+            }
+            return null;
+        }
         PlayerSettings s = player.getPlayerSettings();
         SkinParts skin = s.getSkinParts();
         return new ClientSettings((int) s.getViewDistance(), ClientSettings.token(s.getChatMode()), s.hasChatColors(),

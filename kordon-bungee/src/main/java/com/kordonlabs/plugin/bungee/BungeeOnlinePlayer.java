@@ -101,7 +101,14 @@ public final class BungeeOnlinePlayer implements OnlinePlayer {
     /** BungeeCord returns defaults until the settings packet arrives; the locale stays null until then. */
     @Override
     public ClientSettings clientSettings() {
-        if (player.getLocale() == null) return null;
+        if (player.getLocale() == null) {
+            if (bedrock()) {
+                return new ClientSettings(12, "shown", Boolean.TRUE, "right",
+                        ClientSettings.skinMask(true, true, true, true, true, true, true),
+                        null, null, null);
+            }
+            return null;
+        }
         SkinConfiguration skin = player.getSkinParts();
         return new ClientSettings((int) player.getViewDistance(), ClientSettings.token(player.getChatMode()),
                 player.hasChatColors(), ClientSettings.token(player.getMainHand()),

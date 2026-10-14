@@ -3,6 +3,7 @@ package com.kordonlabs.plugin.nukkit;
 import cn.nukkit.Player;
 import cn.nukkit.network.protocol.ProtocolInfo;
 import cn.nukkit.utils.LoginChainData;
+import com.kordonlabs.plugin.common.api.dto.ClientSettings;
 import com.kordonlabs.plugin.common.platform.OnlinePlayer;
 import com.kordonlabs.plugin.common.platform.PlayerFacts;
 import com.kordonlabs.plugin.common.text.Legacy;
@@ -96,6 +97,49 @@ public final class NukkitOnlinePlayer implements OnlinePlayer {
     @Override
     public boolean bedrock() {
         return true;
+    }
+
+    @Override
+    public ClientSettings clientSettings() {
+        int viewDistance = player.getViewDistance();
+        LoginChainData chain = player.getLoginChainData();
+        if (viewDistance <= 0 && chain != null) {
+            try {
+                com.google.gson.JsonObject raw = chain.getRawData();
+                if (raw != null && raw.has("MaxViewDistance")) {
+                    viewDistance = raw.get("MaxViewDistance").getAsInt();
+                }
+            } catch (Throwable ignored) {
+            }
+        }
+        if (viewDistance <= 0) {
+            viewDistance = 8;
+        }
+
+        boolean hasCape = chain != null && chain.getCapeData() != null && !chain.getCapeData().isEmpty();
+        if (!hasCape) {
+            try {
+                Object skin = player.getSkin();
+                if (skin != null) {
+                    java.lang.reflect.Method getCapeData = skin.getClass().getMethod("getCapeData");
+                    Object cape = getCapeData.invoke(skin);
+                    hasCape = cape != null;
+                }
+            } catch (Throwable ignored) {
+            }
+        }
+
+        int skinParts = ClientSettings.skinMask(hasCape, true, true, true, true, true, true);
+        return new ClientSettings(
+                viewDistance,
+                "shown",
+                Boolean.TRUE,
+                "right",
+                skinParts,
+                Boolean.TRUE,
+                Boolean.FALSE,
+                "all"
+        );
     }
 
     @Override
