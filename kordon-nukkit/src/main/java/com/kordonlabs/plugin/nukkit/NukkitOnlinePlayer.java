@@ -5,6 +5,7 @@ import cn.nukkit.network.protocol.ProtocolInfo;
 import cn.nukkit.utils.LoginChainData;
 import com.kordonlabs.plugin.common.platform.OnlinePlayer;
 import com.kordonlabs.plugin.common.platform.PlayerFacts;
+import com.kordonlabs.plugin.common.text.Legacy;
 import java.util.Locale;
 import java.util.UUID;
 
@@ -25,7 +26,7 @@ public final class NukkitOnlinePlayer implements OnlinePlayer {
         if (player == null) return null;
         String ip = null;
         LoginChainData chain = player.getLoginChainData();
-        if (chain != null && chain.getWaterdogIP() != null && !chain.getWaterdogIP().isEmpty()) {
+        if (isWaterdogEnabled() && chain != null && chain.getWaterdogIP() != null && !chain.getWaterdogIP().isEmpty()) {
             ip = chain.getWaterdogIP();
         } else if (player.getSocketAddress() != null) {
             ip = PlayerFacts.ipOf(player.getSocketAddress());
@@ -33,6 +34,15 @@ public final class NukkitOnlinePlayer implements OnlinePlayer {
             ip = player.getAddress();
         }
         return ip == null ? null : new NukkitOnlinePlayer(player, ip);
+    }
+
+    private static boolean isWaterdogEnabled() {
+        try {
+            cn.nukkit.Server server = cn.nukkit.Server.getInstance();
+            return server != null && server.getSettings().general().useWaterdog();
+        } catch (Throwable ignored) {
+            return false;
+        }
     }
 
     public Player handle() {
@@ -111,7 +121,8 @@ public final class NukkitOnlinePlayer implements OnlinePlayer {
 
     @Override
     public void disconnect(String legacySection) {
-        player.close(legacySection, legacySection);
+        String msg = legacySection != null ? Legacy.strip(legacySection) : "";
+        player.close(msg, msg);
     }
 
     @Override

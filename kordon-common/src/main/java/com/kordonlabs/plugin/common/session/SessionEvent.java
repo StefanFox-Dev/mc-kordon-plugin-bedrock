@@ -56,7 +56,12 @@ public sealed interface SessionEvent permits SessionEvent.Join, SessionEvent.Inf
     }
 
     /** Changed client details; null fields stay unchanged on the panel. */
-    record Info(String sid, long atNanos, String brand, String locale, String backend) implements SessionEvent {
+    record Info(String sid, long atNanos, String brand, String locale, String backend,
+                com.kordonlabs.plugin.common.api.dto.ConnStats stats) implements SessionEvent {
+
+        public Info(String sid, long atNanos, String brand, String locale, String backend) {
+            this(sid, atNanos, brand, locale, backend, null);
+        }
 
         @Override
         public Kind kind() {
@@ -65,12 +70,12 @@ public sealed interface SessionEvent permits SessionEvent.Join, SessionEvent.Inf
 
         @Override
         public SyncEvent toWire(long nowNanos) {
-            return new SyncEvent.Info(sid, agoMillis(atNanos, nowNanos), brand, locale, backend);
+            return new SyncEvent.Info(sid, agoMillis(atNanos, nowNanos), brand, locale, backend, stats);
         }
 
         @Override
         public int estimatedBytes() {
-            return 120 + 3 * (len(brand) + len(locale) + len(backend));
+            return 120 + 3 * (len(brand) + len(locale) + len(backend)) + (stats == null ? 0 : 96);
         }
     }
 

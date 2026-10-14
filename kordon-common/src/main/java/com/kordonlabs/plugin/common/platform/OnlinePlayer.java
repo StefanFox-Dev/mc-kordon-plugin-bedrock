@@ -49,4 +49,9 @@ public interface OnlinePlayer {
 
     /** Disconnects with a kick screen ({@code §} codes, {@code \n} allowed). Thread-safe. */
     void disconnect(String legacySection);
+
+    /** Connection telemetry (RTT, MSS, ping, relay); null when not supported or available. */
+    default com.kordonlabs.plugin.common.api.dto.ConnStats connStats() {
+        return null;
+    }
 }

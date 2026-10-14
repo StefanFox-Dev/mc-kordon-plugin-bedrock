@@ -41,7 +41,10 @@ public sealed interface SyncEvent permits SyncEvent.Join, SyncEvent.Info, SyncEv
     }
 
     /** Changed client details of an open session; null fields are unchanged. {@code locale} is BCP 47 ("ru-RU"). */
-    record Info(String sid, long ago, String brand, String locale, String backend) implements SyncEvent {
+    record Info(String sid, long ago, String brand, String locale, String backend, ConnStats stats) implements SyncEvent {
+        public Info(String sid, long ago, String brand, String locale, String backend) {
+            this(sid, ago, brand, locale, backend, null);
+        }
     }
 
     /**

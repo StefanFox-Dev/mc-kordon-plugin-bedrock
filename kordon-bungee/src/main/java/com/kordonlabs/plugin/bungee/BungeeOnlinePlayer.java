@@ -2,8 +2,10 @@ package com.kordonlabs.plugin.bungee;
 
 import com.kordonlabs.plugin.bungee.compat.BrandCache;
 import com.kordonlabs.plugin.bungee.compat.BrandDecoder;
+import com.kordonlabs.plugin.bungee.compat.BungeeConn;
 import com.kordonlabs.plugin.bungee.compat.Reflect;
 import com.kordonlabs.plugin.bungee.text.BungeeText;
+import com.kordonlabs.plugin.common.api.dto.ConnStats;
 import com.kordonlabs.plugin.common.compat.FloodgateHook;
 import com.kordonlabs.plugin.common.platform.OnlinePlayer;
 import com.kordonlabs.plugin.common.platform.PlayerFacts;
@@ -102,6 +104,11 @@ public final class BungeeOnlinePlayer implements OnlinePlayer {
             bedrock = known;
         }
         return known;
+    }
+
+    @Override
+    public ConnStats connStats() {
+        return bedrock() ? null : BungeeConn.stats(player, ip);
     }
 
     /** The same {@code PendingConnection} that {@code LoginEvent#getConnection()} returned for this login. */

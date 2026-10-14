@@ -11,6 +11,7 @@ import com.kordonlabs.plugin.common.login.LoginAttempt;
 import com.kordonlabs.plugin.common.login.LoginHold;
 import com.kordonlabs.plugin.common.platform.Platform;
 import com.kordonlabs.plugin.common.platform.PlayerFacts;
+import com.kordonlabs.plugin.common.text.Legacy;
 import com.kordonlabs.plugin.common.text.MessageKey;
 import com.kordonlabs.plugin.common.text.Messages;
 import com.kordonlabs.plugin.common.util.ThrottledLog;
@@ -62,7 +63,7 @@ public final class NukkitLoginListener {
         LoginChainData chain = event.getChainData();
         String name = event.getName();
         String ip = null;
-        if (chain != null && chain.getWaterdogIP() != null && !chain.getWaterdogIP().isEmpty()) {
+        if (isWaterdogEnabled() && chain != null && chain.getWaterdogIP() != null && !chain.getWaterdogIP().isEmpty()) {
             ip = chain.getWaterdogIP();
         } else {
             ip = event.getAddress();
@@ -130,7 +131,8 @@ public final class NukkitLoginListener {
 
         @Override
         protected void deny(String kickMessage) {
-            event.disAllow(kickMessage != null ? kickMessage : "Connection refused by Kordon");
+            String msg = kickMessage != null ? kickMessage : "Connection refused by Kordon";
+            event.disAllow(Legacy.strip(msg));
         }
 
         @Override
@@ -144,6 +146,15 @@ public final class NukkitLoginListener {
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             }
+        }
+    }
+
+    private static boolean isWaterdogEnabled() {
+        try {
+            cn.nukkit.Server server = cn.nukkit.Server.getInstance();
+            return server != null && server.getSettings().general().useWaterdog();
+        } catch (Throwable ignored) {
+            return false;
         }
     }
 }

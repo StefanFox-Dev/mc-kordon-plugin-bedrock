@@ -1,6 +1,7 @@
 package com.kordonlabs.plugin.common.login;
 
 import com.kordonlabs.plugin.common.KordonCore;
+import com.kordonlabs.plugin.common.text.Legacy;
 import com.kordonlabs.plugin.common.util.ThrottledLog;
 
 /**
@@ -93,7 +94,11 @@ public abstract class HeldLogin implements LoginHold.Target {
             return;
         }
         try {
-            deny(verdict.kickMessage());
+            String kickMessage = verdict.kickMessage();
+            if (attempt.bedrock() && kickMessage != null) {
+                kickMessage = Legacy.strip(kickMessage);
+            }
+            deny(kickMessage);
         } catch (Throwable t) {
             warn("listener.login.deny", "Kordon: could not refuse a login: ", t);
         }

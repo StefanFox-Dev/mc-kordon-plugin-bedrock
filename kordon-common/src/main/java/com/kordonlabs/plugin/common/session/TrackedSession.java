@@ -1,5 +1,6 @@
 package com.kordonlabs.plugin.common.session;
 
+import com.kordonlabs.plugin.common.api.dto.ConnStats;
 import com.kordonlabs.plugin.common.platform.OnlinePlayer;
 import com.kordonlabs.plugin.common.util.Scheduler;
 import java.util.UUID;
@@ -46,6 +47,10 @@ public final class TrackedSession {
     Scheduler.Cancellable infoFlush;
     /** The pending Geyser-brand check of a Bedrock player; null when none. */
     Scheduler.Cancellable geyserCheck;
+    Scheduler.Cancellable statsSample;
+    int statsSamples;
+    ConnStats stats;
+    ConnStats sentStats;
 
     TrackedSession(Object key, OnlinePlayer player, UUID uuid, String name, String ip, int protocol, boolean bedrock,
                    String sid, long joinNanos, Long loginId) {
@@ -82,7 +87,9 @@ public final class TrackedSession {
     void cancelTimers() {
         if (infoFlush != null) infoFlush.cancel();
         if (geyserCheck != null) geyserCheck.cancel();
+        if (statsSample != null) statsSample.cancel();
         infoFlush = null;
         geyserCheck = null;
+        statsSample = null;
     }
 }

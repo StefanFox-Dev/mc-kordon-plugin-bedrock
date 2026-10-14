@@ -253,8 +253,16 @@ public final class LoginGate {
 
     private static LoginRequest request(LoginAttempt a) {
         LoginRequest.Skin skin = a.skin() == null ? null : new LoginRequest.Skin(a.skin().texture(), a.skin().model());
-        return new LoginRequest(a.name(), a.ip(), a.uuid() == null ? null : a.uuid().toString(),
-                a.protocol() > 0 ? a.protocol() : null, skin, a.host());
+        String name = a.name();
+        if (a.bedrock() && name != null) {
+            name = name.replace(' ', '_');
+            if (name.length() > 16) {
+                name = name.substring(0, 16);
+            }
+        }
+        return new LoginRequest(name, a.ip(), a.uuid() == null ? null : a.uuid().toString(),
+                a.protocol() > 0 ? a.protocol() : null, skin, a.host(),
+                a.stats() == null ? null : a.stats().forLogin());
     }
 
     private static LoginVerdict allow(LoginVerdict.Source source) {

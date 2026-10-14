@@ -2,9 +2,11 @@ package com.kordonlabs.plugin.velocity;
 
 import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.ServerConnection;
+import com.kordonlabs.plugin.common.api.dto.ConnStats;
 import com.kordonlabs.plugin.common.compat.FloodgateHook;
 import com.kordonlabs.plugin.common.platform.OnlinePlayer;
 import com.kordonlabs.plugin.common.platform.PlayerFacts;
+import com.kordonlabs.plugin.velocity.compat.VelocityConn;
 import com.kordonlabs.plugin.velocity.text.VelocityText;
 import java.util.Optional;
 import java.util.UUID;
@@ -88,6 +90,11 @@ public final class VelocityOnlinePlayer implements OnlinePlayer {
             bedrock = known;
         }
         return known;
+    }
+
+    @Override
+    public ConnStats connStats() {
+        return bedrock() ? null : VelocityConn.stats(player, ip);
     }
 
     /** The same {@link Player} object that {@code LoginEvent#getPlayer()} returned for this login. */

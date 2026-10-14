@@ -1,5 +1,6 @@
 package com.kordonlabs.plugin.common.session;
 
+import com.kordonlabs.plugin.common.api.dto.ConnStats;
 import com.kordonlabs.plugin.common.api.dto.SyncEvent;
 import com.kordonlabs.plugin.common.platform.OnlinePlayer;
 import com.kordonlabs.plugin.common.platform.Platform;
@@ -49,6 +50,7 @@ public final class SessionTracker {
     static final Duration GHOST_GRACE = Duration.ofSeconds(10);
     /** A disconnect this soon after a Kordon kick is reported as "kicked". */
     static final Duration KICKED_WINDOW = Duration.ofSeconds(10);
+    static final long[] STATS_SAMPLE_DELAYS = new long[]{20000L, 40000L, 60000L};
     /** The panel skips a join with longer values, so they are cut here. */
     static final int MAX_BRAND = 64;
     static final int MAX_BACKEND = 64;
@@ -108,6 +110,9 @@ public final class SessionTracker {
             queue.offer(s.joinEvent(s.joinNanos));
             if (s.bedrock && s.brand == null) {
                 s.geyserCheck = worker.schedule(() -> geyserCheck(s), GEYSER_DELAY.toMillis(), TimeUnit.MILLISECONDS);
+            }
+            if (!s.bedrock) {
+                scheduleStatsSample(s);
             }
         }
         onEnqueue.accept(SessionEvent.Kind.JOIN);
@@ -493,6 +498,65 @@ public final class SessionTracker {
             queued = queueInfoIfChanged(s, fresh, clock.nanos());
         }
         if (queued) onEnqueue.accept(SessionEvent.Kind.INFO);
+    }
+
+    private void scheduleStatsSample(TrackedSession s) {
+        if (s.statsSamples >= STATS_SAMPLE_DELAYS.length) return;
+        long delay = STATS_SAMPLE_DELAYS[s.statsSamples] - (s.statsSamples == 0 ? 0L : STATS_SAMPLE_DELAYS[s.statsSamples - 1]);
+        s.statsSample = worker.schedule(() -> statsSample(s), delay, TimeUnit.MILLISECONDS);
+    }
+
+    private void statsSample(TrackedSession s) {
+        ConnStats fresh;
+        synchronized (lock) {
+            if (byKey.get(s.key) != s) return;
+            s.statsSample = null;
+            s.statsSamples++;
+        }
+        try {
+            fresh = s.player.connStats();
+        } catch (RuntimeException e) {
+            fresh = null;
+        }
+        boolean queued = false;
+        synchronized (lock) {
+            if (byKey.get(s.key) != s) return;
+            if (fresh != null) {
+                s.stats = merge(s.stats, fresh);
+            }
+            if (s.stats != null && s.stats.d() != null && tells(s.stats, s.sentStats)) {
+                s.sentStats = s.stats;
+                queue.offer(new SessionEvent.Info(s.sid, clock.nanos(), null, null, null, s.stats));
+                queued = true;
+            }
+            scheduleStatsSample(s);
+        }
+        if (queued) onEnqueue.accept(SessionEvent.Kind.INFO);
+    }
+
+    static ConnStats merge(ConnStats known, ConnStats fresh) {
+        if (known == null) return fresh;
+        Integer ping = min(known.d(), fresh.d());
+        int pings = (known.e() == null ? 0 : known.e()) + (fresh.d() == null ? 0 : Math.max(1, fresh.e() == null ? 1 : fresh.e()));
+        return new ConnStats(min(known.a(), fresh.a()), fresh.b() != null ? fresh.b() : known.b(),
+                fresh.c() != null ? fresh.c() : known.c(), ping, ping == null ? null : pings,
+                Boolean.TRUE.equals(known.f()) || Boolean.TRUE.equals(fresh.f()) ? Boolean.TRUE : null);
+    }
+
+    static boolean tells(ConnStats now, ConnStats sent) {
+        if (sent == null) return true;
+        return lower(now.d(), sent.d()) || lower(now.a(), sent.a()) || (now.c() != null && sent.c() == null)
+                || (now.e() != null && !now.e().equals(sent.e()));
+    }
+
+    private static boolean lower(Integer now, Integer before) {
+        return now != null && (before == null || now < before);
+    }
+
+    private static Integer min(Integer a, Integer b) {
+        if (a == null) return b;
+        if (b == null) return a;
+        return Math.min(a, b);
     }
 
     /**

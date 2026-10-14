@@ -1,5 +1,6 @@
 package com.kordonlabs.plugin.common.login;
 
+import com.kordonlabs.plugin.common.api.dto.ConnStats;
 import java.util.UUID;
 
 /**
@@ -12,12 +13,18 @@ import java.util.UUID;
  * @param skin          online mode only; nullable
  * @param bedrock       a Floodgate player
  * @param host          the address the player joined by ({@code PlayerFacts.joinHost}); nullable
+ * @param stats         connection telemetry; nullable
  */
 public record LoginAttempt(Object connectionKey, String name, UUID uuid, String ip, int protocol, Skin skin,
-                           boolean bedrock, String host) {
+                           boolean bedrock, String host, ConnStats stats) {
+
+    public LoginAttempt(Object connectionKey, String name, UUID uuid, String ip, int protocol, Skin skin,
+                        boolean bedrock, String host) {
+        this(connectionKey, name, uuid, ip, protocol, skin, bedrock, host, null);
+    }
 
     public LoginAttempt(Object connectionKey, String name, UUID uuid, String ip, int protocol, Skin skin,
                         boolean bedrock) {
-        this(connectionKey, name, uuid, ip, protocol, skin, bedrock, null);
+        this(connectionKey, name, uuid, ip, protocol, skin, bedrock, null, null);
     }
 }

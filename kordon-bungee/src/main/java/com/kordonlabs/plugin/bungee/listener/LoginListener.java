@@ -1,6 +1,7 @@
 package com.kordonlabs.plugin.bungee.listener;
 
 import com.kordonlabs.plugin.bungee.compat.AsyncEvents;
+import com.kordonlabs.plugin.bungee.compat.BungeeConn;
 import com.kordonlabs.plugin.bungee.compat.SkinReader;
 import com.kordonlabs.plugin.bungee.text.BungeeText;
 import com.kordonlabs.plugin.common.KordonCore;
@@ -94,7 +95,7 @@ public final class LoginListener implements Listener {
         boolean bedrock = floodgate.isBedrock(uuid);
         Skin skin = bedrock ? null : skins.read(connection);
         LoginAttempt attempt = new LoginAttempt(connection, name, uuid, ip, connection.getVersion(), skin, bedrock,
-                PlayerFacts.joinHost(connection.getVirtualHost()));
+                PlayerFacts.joinHost(connection.getVirtualHost()), bedrock ? null : BungeeConn.loginStats(connection, ip));
         Target target = new Target(event, attempt, gate);
 
         event.registerIntent(plugin); // the last fallible step before the hold

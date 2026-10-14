@@ -120,6 +120,9 @@ public final class KickExecutor {
                 return;
             }
             sessions.markKicked(sid);
+            if (player.bedrock() && shown != null) {
+                shown = Legacy.strip(shown);
+            }
             player.disconnect(shown);
             log.info(messages.console(MessageKey.LOG_REMOTE_KICK, "name", Messages.literal(player.name()),
                     "why", messages.english().get(why(cause))));

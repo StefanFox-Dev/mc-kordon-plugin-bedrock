@@ -16,6 +16,7 @@ import com.kordonlabs.plugin.common.text.MessageKey;
 import com.kordonlabs.plugin.common.text.Messages;
 import com.kordonlabs.plugin.common.util.ThrottledLog;
 import com.kordonlabs.plugin.velocity.VelocitySkins;
+import com.kordonlabs.plugin.velocity.compat.VelocityConn;
 import com.kordonlabs.plugin.velocity.text.VelocityText;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -87,7 +88,8 @@ public final class LoginListener {
         Skin skin = bedrock ? null : skins.read(player); // online mode only, never for Bedrock players
         LoginAttempt attempt = new LoginAttempt(player, player.getUsername(), uuid, ip,
                 player.getProtocolVersion().getProtocol(), skin, bedrock,
-                PlayerFacts.joinHost(player.getVirtualHost().orElse(null)));
+                PlayerFacts.joinHost(player.getVirtualHost().orElse(null)),
+                bedrock ? null : VelocityConn.stats(player, ip));
         VelocityHeldLogin held = new VelocityHeldLogin(event, attempt, gate);
         return EventTask.withContinuation(continuation -> {
             try {
