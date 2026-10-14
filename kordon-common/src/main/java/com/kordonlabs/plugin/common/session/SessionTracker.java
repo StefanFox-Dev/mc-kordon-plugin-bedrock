@@ -1,6 +1,6 @@
 package com.kordonlabs.plugin.common.session;
 
-import com.kordonlabs.plugin.common.api.dto.ConnStats;
+import com.kordonlabs.plugin.common.api.dto.ClientSettings;
 import com.kordonlabs.plugin.common.api.dto.SyncEvent;
 import com.kordonlabs.plugin.common.platform.OnlinePlayer;
 import com.kordonlabs.plugin.common.platform.Platform;
@@ -50,7 +50,6 @@ public final class SessionTracker {
     static final Duration GHOST_GRACE = Duration.ofSeconds(10);
     /** A disconnect this soon after a Kordon kick is reported as "kicked". */
     static final Duration KICKED_WINDOW = Duration.ofSeconds(10);
-    static final long[] STATS_SAMPLE_DELAYS = new long[]{20000L, 40000L, 60000L};
     /** The panel skips a join with longer values, so they are cut here. */
     static final int MAX_BRAND = 64;
     static final int MAX_BACKEND = 64;
@@ -99,6 +98,7 @@ public final class SessionTracker {
         s.backend = cleanBackend(p.backend());
         s.brand = cleanBrand(p.clientBrand());
         s.locale = cleanLocale(p.locale());
+        s.settings = readSettings(p);
         synchronized (lock) {
             TrackedSession tracked = byKey.get(key);
             if (tracked != null) {
@@ -110,9 +110,6 @@ public final class SessionTracker {
             queue.offer(s.joinEvent(s.joinNanos));
             if (s.bedrock && s.brand == null) {
                 s.geyserCheck = worker.schedule(() -> geyserCheck(s), GEYSER_DELAY.toMillis(), TimeUnit.MILLISECONDS);
-            }
-            if (!s.bedrock) {
-                scheduleStatsSample(s);
             }
         }
         onEnqueue.accept(SessionEvent.Kind.JOIN);
@@ -500,65 +497,6 @@ public final class SessionTracker {
         if (queued) onEnqueue.accept(SessionEvent.Kind.INFO);
     }
 
-    private void scheduleStatsSample(TrackedSession s) {
-        if (s.statsSamples >= STATS_SAMPLE_DELAYS.length) return;
-        long delay = STATS_SAMPLE_DELAYS[s.statsSamples] - (s.statsSamples == 0 ? 0L : STATS_SAMPLE_DELAYS[s.statsSamples - 1]);
-        s.statsSample = worker.schedule(() -> statsSample(s), delay, TimeUnit.MILLISECONDS);
-    }
-
-    private void statsSample(TrackedSession s) {
-        ConnStats fresh;
-        synchronized (lock) {
-            if (byKey.get(s.key) != s) return;
-            s.statsSample = null;
-            s.statsSamples++;
-        }
-        try {
-            fresh = s.player.connStats();
-        } catch (RuntimeException e) {
-            fresh = null;
-        }
-        boolean queued = false;
-        synchronized (lock) {
-            if (byKey.get(s.key) != s) return;
-            if (fresh != null) {
-                s.stats = merge(s.stats, fresh);
-            }
-            if (s.stats != null && s.stats.d() != null && tells(s.stats, s.sentStats)) {
-                s.sentStats = s.stats;
-                queue.offer(new SessionEvent.Info(s.sid, clock.nanos(), null, null, null, s.stats));
-                queued = true;
-            }
-            scheduleStatsSample(s);
-        }
-        if (queued) onEnqueue.accept(SessionEvent.Kind.INFO);
-    }
-
-    static ConnStats merge(ConnStats known, ConnStats fresh) {
-        if (known == null) return fresh;
-        Integer ping = min(known.d(), fresh.d());
-        int pings = (known.e() == null ? 0 : known.e()) + (fresh.d() == null ? 0 : Math.max(1, fresh.e() == null ? 1 : fresh.e()));
-        return new ConnStats(min(known.a(), fresh.a()), fresh.b() != null ? fresh.b() : known.b(),
-                fresh.c() != null ? fresh.c() : known.c(), ping, ping == null ? null : pings,
-                Boolean.TRUE.equals(known.f()) || Boolean.TRUE.equals(fresh.f()) ? Boolean.TRUE : null);
-    }
-
-    static boolean tells(ConnStats now, ConnStats sent) {
-        if (sent == null) return true;
-        return lower(now.d(), sent.d()) || lower(now.a(), sent.a()) || (now.c() != null && sent.c() == null)
-                || (now.e() != null && !now.e().equals(sent.e()));
-    }
-
-    private static boolean lower(Integer now, Integer before) {
-        return now != null && (before == null || now < before);
-    }
-
-    private static Integer min(Integer a, Integer b) {
-        if (a == null) return b;
-        if (b == null) return a;
-        return Math.min(a, b);
-    }
-
     /**
      * Under the lock: merges fresh values and queues an info with every known value when one differs from the last
      * sent. The backend from {@link #onBackend} wins over the wrapper's, because the proxy updates the wrapper only
@@ -569,13 +507,16 @@ public final class SessionTracker {
         if (brand != null) s.brand = brand;
         if (fresh.locale != null) s.locale = fresh.locale;
         if (s.backend == null && fresh.backend != null) s.backend = fresh.backend;
+        if (fresh.settings != null) s.settings = fresh.settings;
+        boolean settingsChanged = s.settings != null && !s.settings.equals(s.sentSettings);
         boolean changed = differs(s.brand, s.sentBrand) || differs(s.locale, s.sentLocale)
-                || differs(s.backend, s.sentBackend);
+                || differs(s.backend, s.sentBackend) || settingsChanged;
         if (!changed) return false;
         s.sentBrand = s.brand;
         s.sentLocale = s.locale;
         s.sentBackend = s.backend;
-        queue.offer(new SessionEvent.Info(s.sid, now, s.brand, s.locale, s.backend));
+        s.sentSettings = s.settings;
+        queue.offer(new SessionEvent.Info(s.sid, now, s.brand, s.locale, s.backend, settingsChanged ? s.settings : null));
         return true;
     }
 
@@ -614,13 +555,35 @@ public final class SessionTracker {
     }
 
     /** The wrapper's current client details, read outside the lock because it calls proxy code. */
-    private record ClientInfo(String brand, String locale, String backend) {
+    static ClientSettings readSettings(OnlinePlayer p) {
+        try {
+            ClientSettings settings = p.clientSettings();
+            if (settings == null) return null;
+            return new ClientSettings(settings.viewDistance(), cleanToken(settings.chatMode()), settings.chatColors(),
+                    cleanToken(settings.mainHand()), settings.skinParts(), settings.listing(), settings.filtering(),
+                    cleanToken(settings.particles()));
+        } catch (RuntimeException | LinkageError e) {
+            return null;
+        }
+    }
+
+    static String cleanToken(String token) {
+        if (token == null || token.isEmpty() || token.length() > 16) return null;
+        for (int i = 0; i < token.length(); i++) {
+            char c = token.charAt(i);
+            if (!(c >= 'a' && c <= 'z') && c != '_') return null;
+        }
+        return token;
+    }
+
+    private record ClientInfo(String brand, String locale, String backend, ClientSettings settings) {
 
         static ClientInfo read(OnlinePlayer p) {
             try {
-                return new ClientInfo(cleanBrand(p.clientBrand()), cleanLocale(p.locale()), cleanBackend(p.backend()));
+                return new ClientInfo(cleanBrand(p.clientBrand()), cleanLocale(p.locale()), cleanBackend(p.backend()),
+                        readSettings(p));
             } catch (RuntimeException e) {
-                return new ClientInfo(null, null, null);
+                return new ClientInfo(null, null, null, null);
             }
         }
     }

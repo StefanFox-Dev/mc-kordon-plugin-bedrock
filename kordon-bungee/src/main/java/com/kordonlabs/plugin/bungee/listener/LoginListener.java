@@ -1,6 +1,7 @@
 package com.kordonlabs.plugin.bungee.listener;
 
 import com.kordonlabs.plugin.bungee.compat.AsyncEvents;
+import com.kordonlabs.plugin.bungee.compat.BungeeChannels;
 import com.kordonlabs.plugin.bungee.compat.BungeeConn;
 import com.kordonlabs.plugin.bungee.compat.SkinReader;
 import com.kordonlabs.plugin.bungee.text.BungeeText;
@@ -83,6 +84,7 @@ public final class LoginListener implements Listener {
         HeldLogin.Gate gate = core.gate();
         if (gate == null) return;
         PendingConnection connection = event.getConnection();
+        if (BungeeChannels.isFake(connection)) return;
         String name = connection.getName();
         String ip = PlayerFacts.ipOf(connection.getSocketAddress());
         if (ip == null) {
