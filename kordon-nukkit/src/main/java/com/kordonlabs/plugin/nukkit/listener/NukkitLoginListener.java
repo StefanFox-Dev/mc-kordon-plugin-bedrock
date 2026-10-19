@@ -3,7 +3,6 @@ package com.kordonlabs.plugin.nukkit.listener;
 import cn.nukkit.event.EventHandler;
 import cn.nukkit.event.EventPriority;
 import cn.nukkit.event.player.PlayerAsyncPreLoginEvent;
-import cn.nukkit.network.protocol.ProtocolInfo;
 import cn.nukkit.utils.LoginChainData;
 import com.kordonlabs.plugin.common.KordonCore;
 import com.kordonlabs.plugin.common.login.HeldLogin;
@@ -104,9 +103,9 @@ public final class NukkitLoginListener {
                 name,
                 uuid,
                 ip,
-                ProtocolInfo.CURRENT_PROTOCOL,
+                767,
                 null,
-                true,
+                false,
                 PlayerFacts.joinHost(virtualHost)
         );
 

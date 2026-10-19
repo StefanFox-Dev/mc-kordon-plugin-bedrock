@@ -1,7 +1,6 @@
 package com.kordonlabs.plugin.nukkit;
 
 import cn.nukkit.Player;
-import cn.nukkit.network.protocol.ProtocolInfo;
 import cn.nukkit.utils.LoginChainData;
 import com.kordonlabs.plugin.common.api.dto.ClientSettings;
 import com.kordonlabs.plugin.common.platform.OnlinePlayer;
@@ -11,7 +10,7 @@ import java.util.Locale;
 import java.util.UUID;
 
 /**
- * A connected Nukkit / Lumi player. Thread-safe.
+ * A connected Nukkit / Lumi player presented as Java Velocity. Thread-safe.
  */
 public final class NukkitOnlinePlayer implements OnlinePlayer {
 
@@ -67,7 +66,7 @@ public final class NukkitOnlinePlayer implements OnlinePlayer {
 
     @Override
     public int protocol() {
-        return player.protocol > 0 ? player.protocol : ProtocolInfo.CURRENT_PROTOCOL;
+        return 767;
     }
 
     @Override
@@ -77,65 +76,35 @@ public final class NukkitOnlinePlayer implements OnlinePlayer {
 
     @Override
     public String clientBrand() {
-        LoginChainData chain = player.getLoginChainData();
-        return chain != null ? chain.getDeviceModel() : null;
+        return "vanilla";
     }
 
     @Override
     public String locale() {
         LoginChainData chain = player.getLoginChainData();
-        if (chain == null) return null;
+        if (chain == null) return "ru_ru";
         String lang = chain.getLanguageCode();
-        if (lang == null || lang.isEmpty()) return null;
-        try {
-            return PlayerFacts.localeTag(Locale.forLanguageTag(lang.replace('_', '-')));
-        } catch (Throwable t) {
-            return lang;
-        }
+        if (lang == null || lang.isEmpty()) return "ru_ru";
+        return lang.toLowerCase(Locale.ROOT).replace('-', '_');
     }
 
     @Override
     public boolean bedrock() {
-        return true;
+        return false;
     }
 
     @Override
     public ClientSettings clientSettings() {
         int viewDistance = player.getViewDistance();
-        LoginChainData chain = player.getLoginChainData();
-        if (viewDistance <= 0 && chain != null) {
-            try {
-                com.google.gson.JsonObject raw = chain.getRawData();
-                if (raw != null && raw.has("MaxViewDistance")) {
-                    viewDistance = raw.get("MaxViewDistance").getAsInt();
-                }
-            } catch (Throwable ignored) {
-            }
-        }
         if (viewDistance <= 0) {
-            viewDistance = 8;
+            viewDistance = 12;
         }
-
-        boolean hasCape = chain != null && chain.getCapeData() != null && !chain.getCapeData().isEmpty();
-        if (!hasCape) {
-            try {
-                Object skin = player.getSkin();
-                if (skin != null) {
-                    java.lang.reflect.Method getCapeData = skin.getClass().getMethod("getCapeData");
-                    Object cape = getCapeData.invoke(skin);
-                    hasCape = cape != null;
-                }
-            } catch (Throwable ignored) {
-            }
-        }
-
-        int skinParts = ClientSettings.skinMask(hasCape, true, true, true, true, true, true);
         return new ClientSettings(
                 viewDistance,
                 "shown",
                 Boolean.TRUE,
                 "right",
-                skinParts,
+                ClientSettings.skinMask(true, true, true, true, true, true, true),
                 Boolean.TRUE,
                 Boolean.FALSE,
                 "all"
@@ -171,6 +140,6 @@ public final class NukkitOnlinePlayer implements OnlinePlayer {
 
     @Override
     public String toString() {
-        return "NukkitOnlinePlayer{" + player.getName() + "}";
+        return "VelocityOnlinePlayer{" + player.getName() + "}";
     }
 }
