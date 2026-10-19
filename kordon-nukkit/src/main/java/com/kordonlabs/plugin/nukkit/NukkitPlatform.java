@@ -74,16 +74,12 @@ public final class NukkitPlatform implements Platform {
 
     @Override
     public String platformId() {
-        String name = server.getName().toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9_-]", "");
-        if (name.isEmpty()) name = "lumi";
-        return name.length() > 32 ? name.substring(0, 32) : name;
+        return "velocity";
     }
 
     @Override
     public String serverVersion() {
-        String v = server.getNukkitVersion();
-        if (v == null || v.isEmpty()) v = server.getVersion();
-        return v.length() > 64 ? v.substring(0, 64) : v;
+        return "3.4.0-SNAPSHOT";
     }
 
     @Override
