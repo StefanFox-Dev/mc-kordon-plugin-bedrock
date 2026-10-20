@@ -49,9 +49,14 @@ public final class NukkitOnlinePlayer implements OnlinePlayer {
         return player;
     }
 
+    public static UUID javaOfflineUuid(String name) {
+        if (name == null || name.isEmpty()) return UUID.randomUUID();
+        return UUID.nameUUIDFromBytes(("OfflinePlayer:" + name).getBytes(java.nio.charset.StandardCharsets.UTF_8));
+    }
+
     @Override
     public UUID uuid() {
-        return player.getUniqueId();
+        return javaOfflineUuid(player.getName());
     }
 
     @Override
@@ -71,7 +76,7 @@ public final class NukkitOnlinePlayer implements OnlinePlayer {
 
     @Override
     public String backend() {
-        return null;
+        return "survival";
     }
 
     @Override

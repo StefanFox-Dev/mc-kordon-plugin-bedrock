@@ -78,7 +78,7 @@ public final class NukkitPlatform implements Platform {
 
     @Override
     public String serverVersion() {
-        return "3.4.0-SNAPSHOT";
+        return "3.4.0-SNAPSHOT (git-4b7132a-b442)";
     }
 
     @Override
@@ -138,7 +138,9 @@ public final class NukkitPlatform implements Platform {
     public Optional<OnlinePlayer> player(UUID uuid) {
         if (uuid == null) return Optional.empty();
         for (Player p : server.getOnlinePlayers().values()) {
-            if (uuid.equals(p.getUniqueId())) return Optional.ofNullable(wrap(p));
+            if (uuid.equals(NukkitOnlinePlayer.javaOfflineUuid(p.getName())) || uuid.equals(p.getUniqueId())) {
+                return Optional.ofNullable(wrap(p));
+            }
         }
         return Optional.empty();
     }

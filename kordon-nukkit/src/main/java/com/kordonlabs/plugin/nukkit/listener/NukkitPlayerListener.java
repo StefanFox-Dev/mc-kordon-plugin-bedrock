@@ -40,7 +40,12 @@ public final class NukkitPlayerListener {
             Object key = player.getLoginChainData() != null ? player.getLoginChainData() : player.getUniqueId();
             Long loginId = gate.takeLoginId(key);
             NukkitOnlinePlayer online = platform.wrap(player);
-            if (online != null) sessions.onJoin(online, loginId);
+            if (online != null) {
+                sessions.onJoin(online, loginId);
+                sessions.onBackend(key, "survival");
+                sessions.onBrand(key, "vanilla");
+                sessions.onClientInfoChanged(key);
+            }
         } catch (Throwable t) {
             failed("PlayerJoinEvent", t);
         }

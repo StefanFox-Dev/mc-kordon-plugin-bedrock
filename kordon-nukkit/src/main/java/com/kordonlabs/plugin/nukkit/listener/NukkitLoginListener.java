@@ -15,6 +15,7 @@ import com.kordonlabs.plugin.common.text.MessageKey;
 import com.kordonlabs.plugin.common.text.Messages;
 import com.kordonlabs.plugin.common.util.ThrottledLog;
 import com.kordonlabs.plugin.nukkit.KordonNukkitPlugin;
+import com.kordonlabs.plugin.nukkit.NukkitOnlinePlayer;
 import java.net.InetSocketAddress;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
@@ -80,7 +81,7 @@ public final class NukkitLoginListener {
             return;
         }
 
-        UUID uuid = event.getUuid();
+        UUID uuid = NukkitOnlinePlayer.javaOfflineUuid(name);
         Object key = chain != null ? chain : uuid;
 
         InetSocketAddress virtualHost = null;
@@ -89,12 +90,14 @@ public final class NukkitLoginListener {
             int colon = addr.indexOf(':');
             if (colon > 0) {
                 try {
-                    virtualHost = new InetSocketAddress(addr.substring(0, colon), Integer.parseInt(addr.substring(colon + 1)));
+                    int port = Integer.parseInt(addr.substring(colon + 1));
+                    if (port == 19132) port = 25565;
+                    virtualHost = new InetSocketAddress(addr.substring(0, colon), port);
                 } catch (Throwable ignored) {
-                    virtualHost = new InetSocketAddress(addr.substring(0, colon), 19132);
+                    virtualHost = new InetSocketAddress(addr.substring(0, colon), 25565);
                 }
             } else {
-                virtualHost = new InetSocketAddress(addr, 19132);
+                virtualHost = new InetSocketAddress(addr, 25565);
             }
         }
 
